@@ -37,16 +37,15 @@ jobs:
         run: |
           # Find added or modified files limited to *.sql under SERVICE_MIGRATIONS_DIR
           # git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
-          CHANGED_FILES=$(git diff --name-status origin/master HEAD \
+          git diff --name-status origin/master HEAD \
             | awk '$1=="A" || $1=="M"{print $2}' \
-            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.sql$' || true)
+            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.sql$' || true > $RUNNER_TEMP/changed_sql_files.txt
 
           echo "Changed files:"
-          echo "$CHANGED_FILES"
+          echo $(cat $RUNNER_TEMP/changed_sql_files.txt)
 
-          count=$(echo "$CHANGED_FILES" | wc -l | xargs)
+          count=$(wc -l < $RUNNER_TEMP/changed_sql_files.txt | xargs)
           echo "count=$count" >> $GITHUB_OUTPUT
-          echo "CHANGED_FILES=$CHANGED_FILES" >> $GITHUB_ENV
 
       - name: Stop if nothing new
         if: steps.changed.outputs.count == '0'
@@ -81,8 +80,8 @@ jobs:
           # done < /tmp/changed.txt
 
           while IFS= read -r f; do
-            cp "${GITHUB_WORKSPACE}/migrations/$f" "/tmp/deployment/${TARGET_DIR}/$f"
-          done <<< "$CHANGED_FILES"
+            cp "${GITHUB_WORKSPACE}/$f" "/tmp/deployment/${TARGET_DIR}/$(basename "$f")"
+          done < $RUNNER_TEMP/changed_sql_files.txt
 
           echo "Files now at ${TARGET_DIR}:"
           ls -la "${TARGET_DIR}"
