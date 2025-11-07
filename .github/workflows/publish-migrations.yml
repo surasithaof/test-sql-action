@@ -46,7 +46,7 @@ jobs:
 
           count=$(echo "$CHANGED_FILES" | wc -l | xargs)
           echo "count=$count" >> $GITHUB_OUTPUT
-          echo "changed_files=$CHANGED_FILES" >> $GITHUB_OUTPUT
+          echo "CHANGED_FILES=$CHANGED_FILES" >> $GITHUB_ENV
 
       - name: Stop if nothing new
         if: steps.changed.outputs.count == '0'
@@ -82,7 +82,7 @@ jobs:
 
           while IFS= read -r f; do
             cp "${GITHUB_WORKSPACE}/$f" "${TARGET_DIR}/${base}"
-          done <<< "${{ steps.changed.outputs.changed_files }}"
+          done <<< "$CHANGED_FILES"
 
           echo "Files now at ${TARGET_DIR}:"
           ls -la "${TARGET_DIR}"
