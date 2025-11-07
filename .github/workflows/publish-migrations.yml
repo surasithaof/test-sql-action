@@ -93,8 +93,8 @@ jobs:
           git push origin "$BRANCH"
 
           gh pr create \
-            --title "chore(db): publish migrations from [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }})" \
-            --body "This PR publishes new DB migrations
+            --title "chore(db): publish migrations" \
+            --body "This PR publishes new DB migrations from [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }}).
               Merging this PR will trigger Bytebase to create a reviewable Change." \
             --head "$BRANCH" \
             --base master \
