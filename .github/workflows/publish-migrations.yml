@@ -61,27 +61,26 @@ jobs:
 
       - name: Prepare branch and copy files
         if: steps.changed.outputs.count != '0'
-        env:
-          LIST_FILE: ${{ steps.changed.outputs.list }}
         run: |
+          # Find added or modified files limited to *.sql under SERVICE_MIGRATIONS_DIR
+          # git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
+          git diff --name-status origin/master HEAD \
+            | awk '$1=="A" || $1=="M"{print $2}' \
+            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.sql$' || true > "$RUNNER_TEMP/changed_files.txt"
+
+          echo "Changed files:"
+          echo $(cat "$RUNNER_TEMP/changed_files.txt")
+
           BRANCH="migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}"
           cd /tmp/deployment
           git checkout -b "$BRANCH"
 
           mkdir -p "${TARGET_DIR}"
 
-          # git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
-          git diff --name-status origin/master HEAD \
-            | awk '$1=="A" || $1=="M"{print $2}' \
-            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.sql$' || true > "$FILE_LIST"
-
-          echo "SQL files to copy:"
-          cat "$FILE_LIST"
-
           while IFS= read -r f; do
             cp "${GITHUB_WORKSPACE}/$f" "/tmp/deployment/${TARGET_DIR}/$(basename "$f")"
             echo "Copied $f to ${TARGET_DIR}/$(basename "$f")"
-          done < "$FILE_LIST"
+          done < "$RUNNER_TEMP/changed_files.txt"
 
           echo "Files now at ${TARGET_DIR}:"
           ls -la "${TARGET_DIR}"
