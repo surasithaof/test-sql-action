@@ -22,7 +22,7 @@ jobs:
     env:
       DEPLOYMENT_REPO: surasithaof/test-deployment
       TARGET_DIR: overlay/dev/bytebase # adjust to whatever Bytebase watches
-      SERVICE_MIGRATIONS_DIR: /migrations # path in the service repo
+      SERVICE_MIGRATIONS_DIR: migrations # path in the service repo
       GIT_AUTHOR_NAME: migration-bot
       GIT_AUTHOR_EMAIL: migration-bot@users.noreply.github.com
 
@@ -36,14 +36,15 @@ jobs:
         id: changed
         run: |
           # Find added or modified files limited to *.sql under SERVICE_MIGRATIONS_DIR
-          git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
+          # git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
+          CHANGED_FILES=$(git diff --name-status origin/master HEAD \
             | awk '$1=="A" || $1=="M"{print $2}' \
-            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.sql$' || true > /tmp/changed.txt
+            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.sql$' || true)
 
           echo "Changed files:"
-          cat /tmp/changed.txt
+          echo "$CHANGED_FILES"
 
-          count=$(wc -l < /tmp/changed.txt | xargs)
+          count=$(echo "$CHANGED_FILES" | wc -l | xargs)
           echo "count=$count" >> $GITHUB_OUTPUT
 
       - name: Stop if nothing new
