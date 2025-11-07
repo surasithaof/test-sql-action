@@ -35,17 +35,20 @@ jobs:
       - name: Find newly added SQL files in this push
         id: changed
         run: |
+          TMPLIST="$RUNNER_TEMP/changed_files.txt"
+
           # Find added or modified files limited to *.sql under SERVICE_MIGRATIONS_DIR
           # git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
           git diff --name-status origin/master HEAD \
             | awk '$1=="A" || $1=="M"{print $2}' \
-            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.sql$' || true > $HOME/changed_sql_files.txt
+            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.sql$' || true > "$TMPLIST"
 
           echo "Changed files:"
-          echo $(cat $HOME/changed_sql_files.txt)
+          echo $(cat "$TMPLIST")
 
-          count=$(wc -l < $HOME/changed_sql_files.txt | xargs)
+          count=$(wc -l < "$TMPLIST" | xargs)
           echo "count=$count" >> $GITHUB_OUTPUT
+          echo "list=$TMPLIST" >> "$GITHUB_OUTPUT"
 
       - name: Stop if nothing new
         if: steps.changed.outputs.count == '0'
@@ -61,6 +64,8 @@ jobs:
 
       - name: Prepare branch and copy files
         if: steps.changed.outputs.count != '0'
+        env:
+          LIST_FILE: ${{ steps.changed.outputs.list }}
         run: |
           BRANCH="migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}"
           cd /tmp/deployment
