@@ -61,43 +61,76 @@ jobs:
 
       - name: Prepare branch and copy files
         if: steps.changed.outputs.count != '0'
-        env:
-          LIST_FILE: ${{ steps.changed.outputs.list }}
         run: |
+          # Find added or modified files limited to *.sql under SERVICE_MIGRATIONS_DIR
+          # git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
+          CHANGED_FILES=$(git diff --name-status origin/master HEAD \
+            | awk '$1=="A" || $1=="M"{print $2}' \
+            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.sql$' || true)
+
+          echo "Changed files:"
+          echo $(cat "$CHANGED_FILES")
+
           BRANCH="migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}"
           cd /tmp/deployment
           git checkout -b "$BRANCH"
 
           mkdir -p "${TARGET_DIR}"
 
-          # git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
-          git diff --name-status origin/master HEAD \
-            | awk '$1=="A" || $1=="M"{print $2}' \
-            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.sql$' || true > "$RUNNER_TEMP/changed_files.txt"
-
           while IFS= read -r f; do
             cp "${GITHUB_WORKSPACE}/$f" "/tmp/deployment/${TARGET_DIR}/$(basename "$f")"
-          done < "$RUNNER_TEMP/changed_files.txt"
+            echo "Copied $f to ${TARGET_DIR}/$(basename "$f")"
+          done <<< "$CHANGED_FILES"
 
           echo "Files now at ${TARGET_DIR}:"
           ls -la "${TARGET_DIR}"
 
+      # - name: Create PR to deployment repo
+      #   if: steps.changed.outputs.count != '0'
+      #   uses: peter-evans/create-pull-request@v6
+      #   with:
+      #     token: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
+      #     commit-message: "chore(db): publish migrations from ${{ github.event.repository.name }} (#${{ github.run_number }})"
+      #     title: "DB migrations from `${{ github.event.repository.name }}`"
+      #     body: |
+      #       This PR publishes new DB migrations from `${{ github.event.repository.name }}`.
+      #       - Source commit: ${{ github.sha }}
+      #       - Target path: `${{ env.TARGET_DIR }}`
+      #       When merged, Bytebase will pick these up and create a reviewable Change/Issue for SRE.
+      #     branch: ${{ github.ref_name }}
+      #     base: master
+      #     author: "${{ env.GIT_AUTHOR_NAME }} <${{ env.GIT_AUTHOR_EMAIL }}>"
+      #     committer: "${{ env.GIT_AUTHOR_NAME }} <${{ env.GIT_AUTHOR_EMAIL }}>"
+      #     add-paths: |
+      #       ${{ env.TARGET_DIR }}/**
+      #     signoff: false\
+
+      - name: Push changes to deployment repo
+        if: steps.changed.outputs.count != '0'
+        run: |
+          cd /tmp/deployment
+          git add "${TARGET_DIR}/"
+          git commit -m "chore(db): publish migrations from ${{ github.event.repository.name }} (#${{ github.run_number }})"
+          git push origin HEAD
+
       - name: Create PR to deployment repo
         if: steps.changed.outputs.count != '0'
-        uses: peter-evans/create-pull-request@v6
-        with:
-          token: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
-          commit-message: "chore(db): publish migrations from ${{ github.event.repository.name }} (#${{ github.run_number }})"
-          title: "DB migrations from `${{ github.event.repository.name }}`"
-          body: |
-            This PR publishes new DB migrations from `${{ github.event.repository.name }}`.
+        run: |
+          PR_TITLE="DB migrations from \`${{ github.event.repository.name }}\`"
+          PR_BRANCH="migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}"
+          PR_BODY=$(cat << 'EOF'
+            This PR publishes new DB migrations from \`${{ github.event.repository.name }}\`.
             - Source commit: ${{ github.sha }}
-            - Target path: `${{ env.TARGET_DIR }}`
+            - Target path: \`${{ env.TARGET_DIR }}\`
             When merged, Bytebase will pick these up and create a reviewable Change/Issue for SRE.
-          branch: ${{ github.ref_name }}
-          base: master
-          author: "${{ env.GIT_AUTHOR_NAME }} <${{ env.GIT_AUTHOR_EMAIL }}>"
-          committer: "${{ env.GIT_AUTHOR_NAME }} <${{ env.GIT_AUTHOR_EMAIL }}>"
-          add-paths: |
-            ${{ env.TARGET_DIR }}/**
-          signoff: false
+
+            EOF
+          )
+
+          gh pr create \
+            --title "$PR_TITLE" \
+            --body "$PR_BODY" \
+            --head "$BRANCH" \
+            --base master \
+            --label "db:migration" \
+            --reviewer "surasithaof"
