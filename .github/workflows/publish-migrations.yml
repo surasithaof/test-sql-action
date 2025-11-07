@@ -66,10 +66,10 @@ jobs:
           # git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
           git diff --name-status origin/master HEAD \
             | awk '$1=="A" || $1=="M"{print $2}' \
-            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.sql$' || true > "$RUNNER_TEMP/changed_files.txt"
+            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.sql$' || true > "$CHANGED_FILES"
 
           echo "Changed files:"
-          echo $(cat "$RUNNER_TEMP/changed_files.txt")
+          echo $(cat "$CHANGED_FILES")
 
           BRANCH="migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}"
           cd /tmp/deployment
@@ -80,7 +80,7 @@ jobs:
           while IFS= read -r f; do
             cp "${GITHUB_WORKSPACE}/$f" "/tmp/deployment/${TARGET_DIR}/$(basename "$f")"
             echo "Copied $f to ${TARGET_DIR}/$(basename "$f")"
-          done < "$RUNNER_TEMP/changed_files.txt"
+          done < "$CHANGED_FILES"
 
           echo "Files now at ${TARGET_DIR}:"
           ls -la "${TARGET_DIR}"
