@@ -7,7 +7,7 @@ on:
     # types: [closed]
     types: [opened, reopened, synchronize, ready_for_review]
     paths:
-      - "/migrations/**.sql" # adjust to your service repo path
+      - "migrations/**.sql" # adjust to your service repo path
       - ".github/workflows/publish-migrations.yml" # to allow workflow updates
 
 jobs:
