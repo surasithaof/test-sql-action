@@ -46,6 +46,7 @@ jobs:
 
           count=$(echo "$CHANGED_FILES" | wc -l | xargs)
           echo "count=$count" >> $GITHUB_OUTPUT
+          echo "changed_files=$CHANGED_FILES" >> $GITHUB_OUTPUT
 
       - name: Stop if nothing new
         if: steps.changed.outputs.count == '0'
@@ -76,12 +77,12 @@ jobs:
           #     ts=$(date -u +%Y%m%d_%H%M%S)
           #     base="${ts}__${base// /_}"
           #   fi
-          #   cp "${GITHUB_WORKSPACE}/${SERVICE_MIGRATIONS_DIR}/$f" "${TARGET_DIR}/${base}"
+          #   cp "${GITHUB_WORKSPACE}/${SERVICE_MIGRATIONS_DIR}/$f" "/tmp/deployment/${TARGET_DIR}/${base}"
           # done < /tmp/changed.txt
 
           while IFS= read -r f; do
             cp "${GITHUB_WORKSPACE}/$f" "${TARGET_DIR}/${base}"
-          done <<< "$CHANGED_FILES"
+          done <<< "${{ steps.changed.outputs.changed_files }}"
 
           echo "Files now at ${TARGET_DIR}:"
           ls -la "${TARGET_DIR}"
