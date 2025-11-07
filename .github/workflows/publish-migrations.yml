@@ -113,24 +113,42 @@ jobs:
           git commit -m "chore(db): publish migrations from ${{ github.event.repository.name }} (#${{ github.run_number }})"
           git push origin HEAD
 
+      # - name: Create PR to deployment repo
+      #   if: steps.changed.outputs.count != '0'
+      #   run: |
+      #     PR_TITLE="DB migrations from \`${{ github.event.repository.name }}\`"
+      #     PR_BRANCH="migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}"
+      #     PR_BODY=$(cat << 'EOF'
+      #       This PR publishes new DB migrations from \`${{ github.event.repository.name }}\`.
+      #       - Source commit: ${{ github.sha }}
+      #       - Target path: \`${{ env.TARGET_DIR }}\`
+      #       When merged, Bytebase will pick these up and create a reviewable Change/Issue for SRE.
+
+      #       EOF
+      #     )
+
+      #     gh pr create \
+      #       --title "$PR_TITLE" \
+      #       --body "$PR_BODY" \
+      #       --head "$BRANCH" \
+      #       --base master \
+      #       --label "db:migration" \
+      #       --reviewer "surasithaof"
+
       - name: Create PR to deployment repo
         if: steps.changed.outputs.count != '0'
-        run: |
-          PR_TITLE="DB migrations from \`${{ github.event.repository.name }}\`"
-          PR_BRANCH="migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}"
-          PR_BODY=$(cat << 'EOF'
-            This PR publishes new DB migrations from \`${{ github.event.repository.name }}\`.
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
+          commit-message: "chore(db): publish migrations from ${{ github.event.repository.name }}"
+          title: "DB migrations from `${{ github.event.repository.name }}`"
+          body: |
+            This PR publishes new DB migrations from `${{ github.event.repository.name }}`.
             - Source commit: ${{ github.sha }}
-            - Target path: \`${{ env.TARGET_DIR }}\`
-            When merged, Bytebase will pick these up and create a reviewable Change/Issue for SRE.
-
-            EOF
-          )
-
-          gh pr create \
-            --title "$PR_TITLE" \
-            --body "$PR_BODY" \
-            --head "$BRANCH" \
-            --base master \
-            --label "db:migration" \
-            --reviewer "surasithaof"
+            - Target path: `${{ env.TARGET_DIR }}`
+            Merging this PR will trigger Bytebase to create a reviewable Change.
+          branch: "migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}"
+          base: master
+          author: "${{ env.GIT_AUTHOR_NAME }} <${{ env.GIT_AUTHOR_EMAIL }}>"
+          committer: "${{ env.GIT_AUTHOR_NAME }} <${{ env.GIT_AUTHOR_EMAIL }}>"
+          reviewers: "surasithaof"
