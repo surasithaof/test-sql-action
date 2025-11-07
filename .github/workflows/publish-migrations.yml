@@ -20,7 +20,7 @@ jobs:
       pull-requests: write
 
     env:
-      DEPLOYMENT_REPO: surasithaof/test-deployment
+      DEPLOYMENT_REPO: surasithaof/test-deployments
       TARGET_DIR: overlay/dev/bytebase # adjust to whatever Bytebase watches
       SERVICE_MIGRATIONS_DIR: migrations # path in the service repo
       GIT_AUTHOR_NAME: migration-bot
