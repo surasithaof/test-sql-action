@@ -61,6 +61,8 @@ jobs:
 
       - name: Prepare branch and copy files
         if: steps.changed.outputs.count != '0'
+        env:
+          GH_TOKEN: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
         run: |
           # Find added or modified files limited to *.sql under SERVICE_MIGRATIONS_DIR
           # git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
