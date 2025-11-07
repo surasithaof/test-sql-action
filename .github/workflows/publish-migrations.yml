@@ -95,7 +95,7 @@ jobs:
             - Target path: `${{ env.TARGET_DIR }}`
             When merged, Bytebase will pick these up and create a reviewable Change/Issue for SRE.
           branch: ${{ github.ref_name }}
-          base: main
+          base: master
           author: "${{ env.GIT_AUTHOR_NAME }} <${{ env.GIT_AUTHOR_EMAIL }}>"
           committer: "${{ env.GIT_AUTHOR_NAME }} <${{ env.GIT_AUTHOR_EMAIL }}>"
           add-paths: |
