@@ -87,7 +87,7 @@ jobs:
           echo "Files now at ${TARGET_DIR}:"
           ls -la "${TARGET_DIR}"
 
-          git add "${TARGET_DIR}"
+          git add "${TARGET_DIR}/"*.sql
           git status
           git commit -m "chore(db): publish migrations from ${{ github.event.repository.name }}" || echo "No changes to commit"
           git push origin "$BRANCH"
@@ -100,8 +100,8 @@ jobs:
               Merging this PR will trigger Bytebase to create a reviewable Change." \
             --head "$BRANCH" \
             --base master \
-            --reviewer "surasithaof" \
-            --label "db-migration"
+            --reviewer "surasithaof"
+            # --label "db-migration"
 
       # - name: Create PR to deployment repo
       #   if: steps.changed.outputs.count != '0'
