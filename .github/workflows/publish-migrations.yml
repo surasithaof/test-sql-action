@@ -77,6 +77,7 @@ jobs:
 
           while IFS= read -r f; do
             cp "${GITHUB_WORKSPACE}/$f" "/tmp/deployment/${TARGET_DIR}/$(basename "$f")"
+            echo "Copied $f to ${TARGET_DIR}/$(basename "$f")"
           done < "$RUNNER_TEMP/changed_files.txt"
 
           echo "Files now at ${TARGET_DIR}:"
