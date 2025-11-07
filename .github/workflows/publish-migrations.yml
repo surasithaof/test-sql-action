@@ -115,15 +115,22 @@ jobs:
 
       - name: Create PR to deployment repo
         if: steps.changed.outputs.count != '0'
-        uses: peter-evans/create-pull-request@v6
-        with:
-          token: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
-          commit-message: "chore(db): publish migrations from ${{ github.event.repository.name }} (#${{ github.run_number }})"
-          title: "DB migrations from `${{ github.event.repository.name }}`"
-          body: |
-            This PR publishes new DB migrations from `${{ github.event.repository.name }}`.
+        run: |
+          PR_TITLE="DB migrations from \`${{ github.event.repository.name }}\`"
+          PR_BRANCH="migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}"
+          PR_BODY=$(cat <<EOF
+            This PR publishes new DB migrations from \`${{ github.event.repository.name }}\`.
             - Source commit: ${{ github.sha }}
-            - Target path: `${{ env.TARGET_DIR }}`
+            - Target path: \`${{ env.TARGET_DIR }}\`
             When merged, Bytebase will pick these up and create a reviewable Change/Issue for SRE.
-          branch: "migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}"
-          base: master
+
+            EOF
+          )
+
+          gh pr create \
+            --title "$PR_TITLE" \
+            --body "$PR_BODY" \
+            --head "$BRANCH" \
+            --base master \
+            --label "db:migration" \
+            --reviewer "surasithaof"
