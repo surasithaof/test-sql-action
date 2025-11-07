@@ -80,7 +80,7 @@ jobs:
           # done < /tmp/changed.txt
 
           while IFS= read -r f; do
-            cp "${GITHUB_WORKSPACE}/$f" "/tmp/deployment/${TARGET_DIR}/"
+            cp "${GITHUB_WORKSPACE}/$f" "${TARGET_DIR}/${base}"
           done <<< "$CHANGED_FILES"
 
           echo "Files now at ${TARGET_DIR}:"
