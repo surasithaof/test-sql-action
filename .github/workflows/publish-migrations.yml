@@ -2,18 +2,16 @@
 name: Publish DB migrations to deployment repo
 
 on:
-  workflow_dispatch:
-
   pull_request:
     branches: [master]
-    types: [closed]
+    # types: [closed]
+    types: [opened, reopened, synchronize, ready_for_review]
     paths:
       - "/migrations/**.sql" # adjust to your service repo path
       - ".github/workflows/publish-migrations.yml" # to allow workflow updates
 
 jobs:
   open-deployment-pr:
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     permissions:
@@ -40,7 +38,7 @@ jobs:
           # Find added or modified files limited to *.sql under SERVICE_MIGRATIONS_DIR
           git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
             | awk '$1=="A" || $1=="M"{print $2}' \
-            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\up.sql$' || true > /tmp/changed.txt
+            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.sql$' || true > /tmp/changed.txt
 
           echo "Changed files:"
           cat /tmp/changed.txt
