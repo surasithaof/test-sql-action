@@ -69,15 +69,19 @@ jobs:
           mkdir -p "${TARGET_DIR}"
 
           # Copy changed migrations and (optionally) normalize names
+          # while IFS= read -r f; do
+          #   base="$(basename "$f")"
+          #   # Example normalization: ensure timestamp prefix if missing
+          #   if [[ ! "$base" =~ ^[0-9]{8}_[0-9]{6}__ ]]; then
+          #     ts=$(date -u +%Y%m%d_%H%M%S)
+          #     base="${ts}__${base// /_}"
+          #   fi
+          #   cp "${GITHUB_WORKSPACE}/$f" "${TARGET_DIR}/${base}"
+          # done < /tmp/changed.txt
+
           while IFS= read -r f; do
-            base="$(basename "$f")"
-            # Example normalization: ensure timestamp prefix if missing
-            if [[ ! "$base" =~ ^[0-9]{8}_[0-9]{6}__ ]]; then
-              ts=$(date -u +%Y%m%d_%H%M%S)
-              base="${ts}__${base// /_}"
-            fi
-            cp "${GITHUB_WORKSPACE}/$f" "${TARGET_DIR}/${base}"
-          done < /tmp/changed.txt
+            cp "${GITHUB_WORKSPACE}/$f" "/tmp/deployment/${TARGET_DIR}/"
+          done <<< "$CHANGED_FILES"
 
           echo "Files now at ${TARGET_DIR}:"
           ls -la "${TARGET_DIR}"
