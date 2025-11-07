@@ -118,7 +118,7 @@ jobs:
         run: |
           PR_TITLE="DB migrations from \`${{ github.event.repository.name }}\`"
           PR_BRANCH="migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}"
-          PR_BODY=$(cat <<EOF
+          PR_BODY=$(cat << 'EOF'
             This PR publishes new DB migrations from \`${{ github.event.repository.name }}\`.
             - Source commit: ${{ github.sha }}
             - Target path: \`${{ env.TARGET_DIR }}\`
