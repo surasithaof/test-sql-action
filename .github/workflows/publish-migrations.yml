@@ -86,7 +86,7 @@ jobs:
 
           while IFS= read -r f; do
             cp "${GITHUB_WORKSPACE}/$f" "/tmp/deployment/${TARGET_DIR}/$(basename "$f")"
-          done < $HOME/changed_sql_files.txt
+          done < "$LIST_FILE"
 
           echo "Files now at ${TARGET_DIR}:"
           ls -la "${TARGET_DIR}"
