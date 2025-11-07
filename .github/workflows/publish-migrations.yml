@@ -76,7 +76,7 @@ jobs:
           #     ts=$(date -u +%Y%m%d_%H%M%S)
           #     base="${ts}__${base// /_}"
           #   fi
-          #   cp "${GITHUB_WORKSPACE}/$f" "${TARGET_DIR}/${base}"
+          #   cp "${GITHUB_WORKSPACE}/${SERVICE_MIGRATIONS_DIR}/$f" "${TARGET_DIR}/${base}"
           # done < /tmp/changed.txt
 
           while IFS= read -r f; do
