@@ -36,7 +36,8 @@ jobs:
         id: changed
         run: |
           # Find added or modified files limited to *.sql under SERVICE_MIGRATIONS_DIR
-          git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
+          # git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
+          git diff --name-status origin/master...HEAD \
             | awk '$1=="A" || $1=="M"{print $2}' \
             | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.sql$' || true > /tmp/changed.txt
 
