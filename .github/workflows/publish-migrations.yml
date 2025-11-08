@@ -9,7 +9,9 @@ on:
       - ".github/workflows/publish-migrations.yml" # to allow workflow updates
 
 jobs:
-  open-deployment-pr:
+  publish-migrations:
+    name: Publish Migrations
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     permissions:
@@ -91,9 +93,8 @@ jobs:
 
           gh pr create \
             --title "chore(db): publish migrations" \
-            --body "This PR publishes new DB migrations from [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }}).
+            --body "This PR publishes new DB migrations from [${{ github.repository }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }}).
               Merging this PR will trigger Bytebase to create a reviewable Change." \
             --head "$BRANCH" \
             --base master \
-            --reviewer "surasithaof" \
             --label "db-migration"
