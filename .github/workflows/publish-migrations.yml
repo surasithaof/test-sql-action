@@ -90,10 +90,12 @@ jobs:
           git commit -m "chore(db): publish migrations from ${{ github.event.repository.name }}" || echo "No changes to commit"
           git push origin "$BRANCH"
 
-          gh pr create \
+          PR=$(gh pr create \
             --title "chore(db): publish migrations" \
             --body "This PR publishes new DB migrations from [${{ github.repository }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }}).
               Merging this PR will trigger Bytebase to create a reviewable Change." \
             --head "$BRANCH" \
             --base master \
-            --label "db-migration"
+            --label "db-migration")
+
+          echo "Created PR: [$PR]($PR)" >> $GITHUB_STEP_SUMMARY
