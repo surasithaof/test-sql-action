@@ -11,12 +11,11 @@ on:
 jobs:
   publish-migrations:
     name: Publish Migrations
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     permissions:
       contents: read
-      # Needed by peter-evans/create-pull-request for the target repo
+      # Needed for creating PRs
       pull-requests: write
 
     env:
