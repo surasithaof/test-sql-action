@@ -2,15 +2,15 @@
 name: Publish DB migrations to deployment repo
 
 on:
-  pull_request:
+  push:
     branches: [master]
-    types: [closed]
     paths:
       - "migrations/**.sql" # adjust to your service repo path
       - ".github/workflows/publish-migrations.yml" # to allow workflow updates
 
 jobs:
-  open-deployment-pr:
+  publish-migrations:
+    name: Publish Migrations
     if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
@@ -36,15 +36,14 @@ jobs:
         id: changed
         run: |
           # Find added or modified files limited to *.sql under SERVICE_MIGRATIONS_DIR
-          git diff --name-status ${{ github.event.before }} ${{ github.sha }} \ # this is for merge case
-          # git diff --name-status origin/master HEAD \ # this if for pr open case not merge
+          git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
             | awk '$1=="A" || $1=="M"{print $2}' \
             | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true > "$RUNNER_TEMP/changed_files.txt"
 
           echo "Changed files:"
           echo $(cat "$RUNNER_TEMP/changed_files.txt")
 
-          count=$(wc -l < "$TMPLIST" | xargs)
+          count=$(wc -l < "$RUNNER_TEMP/changed_files.txt" | xargs)
           echo "count=$count" >> $GITHUB_OUTPUT
 
       - name: Stop if nothing new
@@ -66,8 +65,7 @@ jobs:
           GH_TOKEN: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
         run: |
           # XXX Find sql files changed again because I couldn't figure out how to pass the list between steps
-          CHANGED_FILES=$(git diff --name-status ${{ github.event.before }} ${{ github.sha }} \ # this is for merge case
-          # CHANGED_FILES=$(git diff --name-status origin/master HEAD \ # this if for pr open case not merge
+          CHANGED_FILES=$(git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
             | awk '$1=="A" || $1=="M"{print $2}' \
             | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true)
 
@@ -95,9 +93,8 @@ jobs:
 
           gh pr create \
             --title "chore(db): publish migrations" \
-            --body "This PR publishes new DB migrations from [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }}).
+            --body "This PR publishes new DB migrations from [${{ github.repository }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }}).
               Merging this PR will trigger Bytebase to create a reviewable Change." \
             --head "$BRANCH" \
             --base master \
-            --reviewer "surasithaof" \
             --label "db-migration"
