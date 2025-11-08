@@ -36,8 +36,7 @@ jobs:
         id: changed
         run: |
           # Find added or modified files limited to *.sql under SERVICE_MIGRATIONS_DIR
-          # this if for pr open case not merge => git diff --name-status origin/master HEAD \
-          git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
+          git diff --name-status origin/master HEAD \
             | awk '$1=="A" || $1=="M"{print $2}' \
             | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true > "$RUNNER_TEMP/changed_files.txt"
 
@@ -66,8 +65,7 @@ jobs:
           GH_TOKEN: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
         run: |
           # XXX Find sql files changed again because I couldn't figure out how to pass the list between steps
-          # this if for pr open case not merge => CHANGED_FILES=$(git diff --name-status origin/master HEAD \
-          CHANGED_FILES=$(git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
+          CHANGED_FILES=$(git diff --name-status origin/master HEAD \
             | awk '$1=="A" || $1=="M"{print $2}' \
             | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true)
 
