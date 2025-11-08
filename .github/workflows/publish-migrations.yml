@@ -2,16 +2,14 @@
 name: Publish DB migrations to deployment repo
 
 on:
-  pull_request:
+  push:
     branches: [master]
-    types: [closed]
     paths:
       - "migrations/**.sql" # adjust to your service repo path
       - ".github/workflows/publish-migrations.yml" # to allow workflow updates
 
 jobs:
   open-deployment-pr:
-    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
 
     permissions:
@@ -36,7 +34,7 @@ jobs:
         id: changed
         run: |
           # Find added or modified files limited to *.sql under SERVICE_MIGRATIONS_DIR
-          git diff --name-status origin/master HEAD \
+          git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
             | awk '$1=="A" || $1=="M"{print $2}' \
             | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true > "$RUNNER_TEMP/changed_files.txt"
 
@@ -65,7 +63,7 @@ jobs:
           GH_TOKEN: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
         run: |
           # XXX Find sql files changed again because I couldn't figure out how to pass the list between steps
-          CHANGED_FILES=$(git diff --name-status origin/master HEAD \
+          CHANGED_FILES=$(git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
             | awk '$1=="A" || $1=="M"{print $2}' \
             | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true)
 
