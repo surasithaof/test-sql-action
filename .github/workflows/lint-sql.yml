@@ -1,0 +1,34 @@
+name: Lint SQL Files
+
+on:
+  pull_request:
+    branches: [main, master]
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+    paths:
+      - "**/*.sql"
+      - ".github/workflows/lint-sql.yml"
+
+jobs:
+  lint:
+    name: Lint SQL Files
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.8"
+
+      - name: Install sqlfluff
+        run: pip install sqlfluff sqlfluff-templater-jinja
+
+      - name: Lint SQL files
+        run: sqlfluff lint "**/*.sql" --dialect postgres --exclude-rules L009,L014
