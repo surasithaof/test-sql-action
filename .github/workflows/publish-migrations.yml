@@ -41,7 +41,7 @@ jobs:
           echo "Changed files:"
           echo $(cat "$RUNNER_TEMP/changed_files.txt")
 
-          count=$(wc -l < "$TMPLIST" | xargs)
+          count=$(wc -l < "$RUNNER_TEMP/changed_files.txt" | xargs)
           echo "count=$count" >> $GITHUB_OUTPUT
 
       - name: Stop if nothing new
