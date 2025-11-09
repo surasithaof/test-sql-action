@@ -112,9 +112,9 @@ jobs:
 
           # Prepare branch of target repo
 
-          BRANCH="migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}"
-          git checkout -b "$BRANCH"
-          git push --set-upstream origin "$BRANCH"
+          # BRANCH="migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}"
+          # git checkout -b "$BRANCH"
+          # git push --set-upstream origin "$BRANCH"
 
           # Copy changed files
 
