@@ -117,6 +117,7 @@ jobs:
           token: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
           path: deployment
           branch: migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}
+          commit-message: "chore(db): publish migrations"
           title: "chore(db): publish migrations"
           body: |
             This PR publishes new DB migrations
