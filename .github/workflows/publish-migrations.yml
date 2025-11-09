@@ -136,29 +136,29 @@ jobs:
 
           git add "${TARGET_DIR}/"*.sql
           git status
-          git commit -m "chore(db): publish migrations from ${{ github.event.repository.name }}" || echo "No changes to commit"
-          git push origin "$BRANCH"
+          # git commit -m "chore(db): publish migrations from ${{ github.event.repository.name }}" || echo "No changes to commit"
+          # git push origin "$BRANCH"
 
-      # - name: Create Pull Request
-      #   if: steps.changed.outputs.count != '0'
-      #   id: create_pr
-      #   uses: peter-evans/create-pull-request@v7
-      #   with:
-      #     token: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
-      #     path: deployment
-      #     branch: migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}
-      #     title: "chore(db): publish migrations"
-      #     body: |
-      #       This PR publishes new DB migrations from [${{ github.repository }}](https://github.com /${{ github.repository }}/commit/${{ github.sha }}).
-      #       Merging this PR will trigger Bytebase to create a reviewable Change.
-      #     base: master
-      #     labels: db-migration
-      #     author: ${{ env.GIT_AUTHOR_NAME }} <${{ env.GIT_AUTHOR_EMAIL }}>
-      #     committer: ${{ env.GIT_AUTHOR_NAME }} <${{ env.GIT_AUTHOR_EMAIL }}>
-      #     delete-branch: true
-      #     assignees: ${{ github.actor }}
+      - name: Create Pull Request
+        if: steps.changed.outputs.count != '0'
+        id: create_pr
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
+          path: deployment
+          branch: migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}
+          title: "chore(db): publish migrations"
+          body: |
+            This PR publishes new DB migrations from [${{ github.repository }}](https://github.com /${{ github.repository }}/commit/${{ github.sha }}).
+            Merging this PR will trigger Bytebase to create a reviewable Change.
+          base: master
+          labels: db-migration
+          author: ${{ env.GIT_AUTHOR_NAME }} <${{ env.GIT_AUTHOR_EMAIL }}>
+          committer: ${{ env.GIT_AUTHOR_NAME }} <${{ env.GIT_AUTHOR_EMAIL }}>
+          delete-branch: true
+          assignees: ${{ github.actor }}
 
-      # - name: PR Summary
-      #   if: steps.changed.outputs.count != '0'
-      #   run: |
-      #     echo "Created PR: ${{ steps.create_pr.outputs.pull-request-url }}" >> $GITHUB_STEP_SUMMARY
+      - name: PR Summary
+        if: steps.changed.outputs.count != '0'
+        run: |
+          echo "Created PR: ${{ steps.create_pr.outputs.pull-request-url }}" >> $GITHUB_STEP_SUMMARY
