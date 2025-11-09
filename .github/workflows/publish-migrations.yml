@@ -115,8 +115,8 @@ jobs:
 
           # Setup git config
 
-          git config --global user.name ${{ env.GIT_AUTHOR_NAME }}
-          git config --global user.email ${{ env.GIT_AUTHOR_EMAIL }}
+          # git config --global user.name ${{ env.GIT_AUTHOR_NAME }}
+          # git config --global user.email ${{ env.GIT_AUTHOR_EMAIL }}
 
           # Commit and push
 
