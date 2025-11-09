@@ -90,7 +90,7 @@ jobs:
         #   git config user.name ${{ env.GIT_AUTHOR_NAME }}
         #   git config user.email ${{ env.GIT_AUTHOR_EMAIL }}
 
-      - name: Prepare branch and copy files
+      - name: Copy changed and commit to deployment repo
         if: steps.changed.outputs.count != '0'
         env:
           GH_TOKEN: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
@@ -104,7 +104,7 @@ jobs:
             | awk '$1=="A" || $1=="M"{print $2}' \
             | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true)
 
-          echo "Changed files:
+          echo "Changed files:"
           echo $(cat "$CHANGED_FILES")
 
           # Switch to deployment repo
