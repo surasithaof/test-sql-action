@@ -8,6 +8,17 @@ on:
       - "migrations/**.sql" # adjust to your service repo path
       - ".github/workflows/publish-migrations.yml" # to allow workflow updates
 
+  # for testing workflow changes
+  pull_request:
+    branches: [master]
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+    paths:
+      - ".github/workflows/publish-migrations.yml" # to allow workflow updates
+
 jobs:
   publish-migrations:
     name: Publish Migrations
@@ -24,6 +35,8 @@ jobs:
       SERVICE_MIGRATIONS_DIR: migrations # path in the service repo
       GIT_AUTHOR_NAME: migration-bot
       GIT_AUTHOR_EMAIL: migration-bot@users.noreply.github.com
+      COMPARE_BASE: ${{ github.event.before }}
+      COMPARE_HEAD: ${{ github.sha }}
 
     steps:
       - name: Check out service repo
@@ -32,21 +45,30 @@ jobs:
           fetch-depth: 0
           path: service
 
+      - name: Set compare refs for PRs
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "COMPARE_BASE=${{ github.event.pull_request.base.sha }}" >> $GITHUB_ENV
+          echo "COMPARE_HEAD=${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV
+
       - name: Find newly added SQL files in this push
         id: changed
         run: |
+          # Switch to service repo
+          cd ${GITHUB_WORKSPACE}/service
+
           # Find added or modified files limited to *.sql under SERVICE_MIGRATIONS_DIR
 
-          git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
+          CHANGED_FILES=$(git diff --name-status ${{ env.COMPARE_BASE }} ${{ env.COMPARE_HEAD }} \
             | awk '$1=="A" || $1=="M"{print $2}' \
-            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true > "$RUNNER_TEMP/changed_files.txt"
+            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true)
 
           echo "Changed files:"
-          echo $(cat "$RUNNER_TEMP/changed_files.txt")
+          echo "$CHANGED_FILES"
 
           # Find count of changed files to decide whether to proceed
 
-          count=$(wc -l < "$RUNNER_TEMP/changed_files.txt" | xargs)
+          count=$(wc -l <<< "$CHANGED_FILES" | xargs)
           echo "count=$count" >> $GITHUB_OUTPUT
 
       - name: Clone deployment repo
@@ -56,6 +78,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: ${{ env.DEPLOYMENT_REPO }}
+          token: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
           fetch-depth: 1 # only need latest commit for faster clone
           path: deployment
 
@@ -67,31 +90,31 @@ jobs:
         #   git config user.name ${{ env.GIT_AUTHOR_NAME }}
         #   git config user.email ${{ env.GIT_AUTHOR_EMAIL }}
 
-      - name: Prepare branch and copy files
+      - name: Copy changed to deployment repo
         if: steps.changed.outputs.count != '0'
         env:
           GH_TOKEN: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
         run: |
+          # Switch to service repo
+          cd ${GITHUB_WORKSPACE}/service
+
           # XXX Find sql files changed again because I couldn't figure out how to pass the list between steps
 
-          CHANGED_FILES=$(git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
+          CHANGED_FILES=$(git diff --name-status ${{ env.COMPARE_BASE }} ${{ env.COMPARE_HEAD }} \
             | awk '$1=="A" || $1=="M"{print $2}' \
             | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true)
 
           echo "Changed files:"
-          echo $(cat "$CHANGED_FILES")
+          echo "$CHANGED_FILES"
 
-          # Prepare branch of target repo
-
-          BRANCH="migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}"
-          cd /tmp/deployment
-          git checkout -b "$BRANCH"
+          # Switch to deployment repo
+          cd ${GITHUB_WORKSPACE}/deployment
 
           # Copy changed files
 
           mkdir -p "${TARGET_DIR}"
           while IFS= read -r f; do
-            cp "${GITHUB_WORKSPACE}/$f" "/tmp/deployment/${TARGET_DIR}/$(basename "$f")"
+            cp "${GITHUB_WORKSPACE}/service/$f" "$GITHUB_WORKSPACE/deployment/${TARGET_DIR}/$(basename "$f")"
             echo "Copied $f to ${TARGET_DIR}/$(basename "$f")"
           done <<< "$CHANGED_FILES"
 
@@ -100,15 +123,14 @@ jobs:
 
           # Setup git config
 
-          git config user.name ${{ env.GIT_AUTHOR_NAME }}
-          git config user.email ${{ env.GIT_AUTHOR_EMAIL }}
+          git config --global user.name ${{ env.GIT_AUTHOR_NAME }}
+          git config --global user.email ${{ env.GIT_AUTHOR_EMAIL }}
 
           # Commit and push
 
           git add "${TARGET_DIR}/"*.sql
           git status
-          git commit -m "chore(db): publish migrations from ${{ github.event.repository.name }}" || echo "No changes to commit"
-          git push origin "$BRANCH"
+          # Don't need to push, PR action peter-evans/create-pull-request will handle it
 
       - name: Create Pull Request
         if: steps.changed.outputs.count != '0'
@@ -116,15 +138,17 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
-          path: /tmp/deployment
+          path: deployment
           branch: migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}
           title: "chore(db): publish migrations"
           body: |
-            This PR publishes new DB migrations from [${{ github.repository }}](https://github.com /${{ github.repository }}/commit/${{ github.sha }}).
+            This PR publishes new DB migrations from [${{ github.repository }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }}).
             Merging this PR will trigger Bytebase to create a reviewable Change.
           base: master
           labels: db-migration
-          author: ${{ env.GIT_AUTHOR_NAME }} <${{ env.GIT_AUTHOR_EMAIL }}>
+          # XXX author will belong to access token owner,
+          # If want to set custom author, need to create an action in target repo
+          # author: ${{ env.GIT_AUTHOR_NAME }} <${{ env.GIT_AUTHOR_EMAIL }}>
           committer: ${{ env.GIT_AUTHOR_NAME }} <${{ env.GIT_AUTHOR_EMAIL }}>
           delete-branch: true
           assignees: ${{ github.actor }}
