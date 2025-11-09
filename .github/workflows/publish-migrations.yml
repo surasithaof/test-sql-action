@@ -123,15 +123,13 @@ jobs:
             echo "Copied $f to ${TARGET_DIR}/$(basename "$f")"
           done <<< "$CHANGED_FILES"
 
-          ls -la "$GITHUB_WORKSPACE/deployment/${TARGET_DIR}"
-
           echo "Files now at ${TARGET_DIR}:"
           ls -la "${TARGET_DIR}"
 
           # Setup git config
 
-          git config user.name ${{ env.GIT_AUTHOR_NAME }}
-          git config user.email ${{ env.GIT_AUTHOR_EMAIL }}
+          git config --global user.name ${{ env.GIT_AUTHOR_NAME }}
+          git config --global user.email ${{ env.GIT_AUTHOR_EMAIL }}
 
           # Commit and push
 
@@ -146,7 +144,7 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
-          path: deployment
+          path: ${GITHUB_WORKSPACE}/deployment
           branch: migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}
           title: "chore(db): publish migrations"
           body: |
