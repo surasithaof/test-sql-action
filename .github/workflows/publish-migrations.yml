@@ -45,6 +45,11 @@ jobs:
       - name: Find newly added SQL files in this push
         id: changed
         run: |
+          # Debug info
+
+          ls -la "${GITHUB_WORKSPACE}/service/${SERVICE_MIGRATIONS_DIR}/"
+          ls -la "${GITHUB_WORKSPACE}
+
           # Find added or modified files limited to *.sql under SERVICE_MIGRATIONS_DIR
 
           git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
