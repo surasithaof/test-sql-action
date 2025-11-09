@@ -54,11 +54,14 @@ jobs:
       - name: Find newly added SQL files in this push
         id: changed
         run: |
+          # Switch to service repo
+          cd ${GITHUB_WORKSPACE}/service
+
           # Find added or modified files limited to *.sql under SERVICE_MIGRATIONS_DIR
 
           git diff --name-status ${{ env.COMPARE_BASE }} ${{ env.COMPARE_HEAD }} \
             | awk '$1=="A" || $1=="M"{print $2}' \
-            | grep -E '^'"${GITHUB_WORKSPACE}/service/${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true > "$RUNNER_TEMP/changed_files.txt"
+            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true > "$RUNNER_TEMP/changed_files.txt"
 
           echo "Changed files:"
           echo $(cat "$RUNNER_TEMP/changed_files.txt")
@@ -92,14 +95,20 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
         run: |
+          # Switch to service repo
+          cd ${GITHUB_WORKSPACE}/service
+
           # XXX Find sql files changed again because I couldn't figure out how to pass the list between steps
 
           CHANGED_FILES=$(git diff --name-status ${{ env.COMPARE_BASE }} ${{ env.COMPARE_HEAD }} \
             | awk '$1=="A" || $1=="M"{print $2}' \
-            | grep -E '^'"${GITHUB_WORKSPACE}/service/${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true)
+            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true)
 
           echo "Changed files:"
           echo $(cat "$CHANGED_FILES")
+
+          # Switch to deployment repo
+          cd ${GITHUB_WORKSPACE}/deployment
 
           # Prepare branch of target repo
 
