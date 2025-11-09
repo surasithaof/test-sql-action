@@ -31,7 +31,7 @@ jobs:
 
     env:
       DEPLOYMENT_REPO: surasithaof/test-deployments
-      TARGET_DIR: overlay/dev/bytebase # adjust to whatever Bytebase watches
+      TARGET_DIR: ${{ github.event.repository.name }}/overlay/dev/bytebase # adjust to whatever Bytebase watches
       SERVICE_MIGRATIONS_DIR: migrations # path in the service repo
       GIT_AUTHOR_NAME: migration-bot
       GIT_AUTHOR_EMAIL: migration-bot@users.noreply.github.com
@@ -59,16 +59,18 @@ jobs:
 
           # Find added or modified files limited to *.sql under SERVICE_MIGRATIONS_DIR
 
-          CHANGED_FILES=$(git diff --name-status ${{ env.COMPARE_BASE }} ${{ env.COMPARE_HEAD }} \
+          git diff --name-status ${{ env.COMPARE_BASE }} ${{ env.COMPARE_HEAD }} \
             | awk '$1=="A" || $1=="M"{print $2}' \
-            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true)
+            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' > $RUNNER_TEMP/changed_files.txt || true
+            
+          ls -la $RUNNER_TEMP/changed_files.txt
 
           echo "Changed files:"
-          echo "$CHANGED_FILES"
+          cat $RUNNER_TEMP/changed_files.txt
 
           # Find count of changed files to decide whether to proceed
 
-          count=$(wc -l <<< "$CHANGED_FILES" | xargs)
+          count=$(wc -l < $RUNNER_TEMP/changed_files.txt | xargs)
           echo "count=$count" >> $GITHUB_OUTPUT
 
       - name: Clone deployment repo
@@ -87,18 +89,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
         run: |
-          # Switch to service repo
-          cd ${GITHUB_WORKSPACE}/service
-
-          # XXX Find sql files changed again because I couldn't figure out how to pass the list between steps
-
-          CHANGED_FILES=$(git diff --name-status ${{ env.COMPARE_BASE }} ${{ env.COMPARE_HEAD }} \
-            | awk '$1=="A" || $1=="M"{print $2}' \
-            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true)
-
-          echo "Changed files:"
-          echo "$CHANGED_FILES"
-
           # Switch to deployment repo
           cd ${GITHUB_WORKSPACE}/deployment
 
@@ -108,7 +98,7 @@ jobs:
           while IFS= read -r f; do
             cp "${GITHUB_WORKSPACE}/service/$f" "$GITHUB_WORKSPACE/deployment/${TARGET_DIR}/$(basename "$f")"
             echo "Copied $f to ${TARGET_DIR}/$(basename "$f")"
-          done <<< "$CHANGED_FILES"
+          done < ${RUNNER_TEMP}/changed_files.txt
 
           echo "Files now at ${TARGET_DIR}:"
           ls -la "${TARGET_DIR}"
@@ -129,7 +119,7 @@ jobs:
           branch: migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}
           title: "chore(db): publish migrations"
           body: |
-            This PR publishes new DB migrations 
+            This PR publishes new DB migrations
 
             - **Service**: [${{ github.repository }}](https://github.com/${{ github.repository }}).
             - **Commit**: [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }}).
