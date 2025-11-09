@@ -1,0 +1,2 @@
+ALTER TABLE active_users
+ADD COLUMN last_active_at TIMESTAMPTZ DEFAULT NOW();
