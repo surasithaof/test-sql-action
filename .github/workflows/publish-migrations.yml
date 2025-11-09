@@ -90,7 +90,7 @@ jobs:
         #   git config user.name ${{ env.GIT_AUTHOR_NAME }}
         #   git config user.email ${{ env.GIT_AUTHOR_EMAIL }}
 
-      - name: Copy changed and commit to deployment repo
+      - name: Copy changed to deployment repo
         if: steps.changed.outputs.count != '0'
         env:
           GH_TOKEN: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
@@ -109,12 +109,6 @@ jobs:
 
           # Switch to deployment repo
           cd ${GITHUB_WORKSPACE}/deployment
-
-          # Prepare branch of target repo
-
-          # BRANCH="migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}"
-          # git checkout -b "$BRANCH"
-          # git push --set-upstream origin "$BRANCH"
 
           # Copy changed files
 
@@ -136,14 +130,14 @@ jobs:
 
           git add "${TARGET_DIR}/"*.sql
           git status
-          # git commit -m "chore(db): publish migrations from ${{ github.event.repository.name }}" || echo "No changes to commit"
-          # git push origin "$BRANCH"
+          # Don't need to push, PR action peter-evans/create-pull-request will handle it
 
       - name: Create Pull Request
         if: steps.changed.outputs.count != '0'
         id: create_pr
         uses: peter-evans/create-pull-request@v7
         with:
+          token: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
           path: deployment
           branch: migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}
           title: "chore(db): publish migrations"
