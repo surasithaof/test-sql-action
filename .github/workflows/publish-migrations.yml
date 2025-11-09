@@ -144,12 +144,11 @@ jobs:
         id: create_pr
         uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
           path: deployment
           branch: migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}
           title: "chore(db): publish migrations"
           body: |
-            This PR publishes new DB migrations from [${{ github.repository }}](https://github.com /${{ github.repository }}/commit/${{ github.sha }}).
+            This PR publishes new DB migrations from [${{ github.repository }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }}).
             Merging this PR will trigger Bytebase to create a reviewable Change.
           base: master
           labels: db-migration
