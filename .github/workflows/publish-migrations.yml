@@ -61,7 +61,7 @@ jobs:
 
           git diff --name-status ${{ env.COMPARE_BASE }} ${{ env.COMPARE_HEAD }} \
             | awk '$1=="A" || $1=="M"{print $2}' \
-            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true >> $RUNNER_TEMP/changed_files.txt
+            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true > $RUNNER_TEMP/changed_files.txt
 
           ls -la $RUNNER_TEMP/changed_files.txt
 
