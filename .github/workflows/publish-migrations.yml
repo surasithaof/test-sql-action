@@ -61,14 +61,16 @@ jobs:
 
           git diff --name-status ${{ env.COMPARE_BASE }} ${{ env.COMPARE_HEAD }} \
             | awk '$1=="A" || $1=="M"{print $2}' \
-            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true >> ${GITHUB_WORKSPACE}/service/changed_files.txt
+            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true >> changed_files.txt
+
+          ls -la changed_files.txt
 
           echo "Changed files:"
-          cat ${GITHUB_WORKSPACE}/service/changed_files.txt
+          cat changed_files.txt
 
           # Find count of changed files to decide whether to proceed
 
-          count=$(wc -l < ${GITHUB_WORKSPACE}/service/changed_files.txt | xargs)
+          count=$(wc -l < changed_files.txt | xargs)
           echo "count=$count" >> $GITHUB_OUTPUT
 
       - name: Clone deployment repo
