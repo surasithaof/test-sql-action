@@ -119,9 +119,11 @@ jobs:
 
           mkdir -p "${TARGET_DIR}"
           while IFS= read -r f; do
-            cp "${GITHUB_WORKSPACE}/service/$f" "${TARGET_DIR}/$(basename "$f")"
+            cp "${GITHUB_WORKSPACE}/service/$f" "$GITHUB_WORKSPACE/deployment/${TARGET_DIR}/$(basename "$f")"
             echo "Copied $f to ${TARGET_DIR}/$(basename "$f")"
           done <<< "$CHANGED_FILES"
+
+          ls -la "$GITHUB_WORKSPACE/deployment/${TARGET_DIR}"
 
           echo "Files now at ${TARGET_DIR}:"
           ls -la "${TARGET_DIR}"
