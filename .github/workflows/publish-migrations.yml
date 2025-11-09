@@ -63,6 +63,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
         run: |
+          git config user.name ${{ env.GIT_AUTHOR_NAME }}
+          git config user.email ${{ env.GIT_AUTHOR_EMAIL }}
+
           # XXX Find sql files changed again because I couldn't figure out how to pass the list between steps
           CHANGED_FILES=$(git diff --name-status ${{ github.event.before }} ${{ github.sha }} \
             | awk '$1=="A" || $1=="M"{print $2}' \
@@ -90,10 +93,12 @@ jobs:
           git commit -m "chore(db): publish migrations from ${{ github.event.repository.name }}" || echo "No changes to commit"
           git push origin "$BRANCH"
 
-          gh pr create \
+          PR=$(gh pr create \
             --title "chore(db): publish migrations" \
             --body "This PR publishes new DB migrations from [${{ github.repository }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }}).
               Merging this PR will trigger Bytebase to create a reviewable Change." \
             --head "$BRANCH" \
             --base master \
-            --label "db-migration"
+            --label "db-migration")
+
+          echo "Created PR: [$PR]($PR)" >> $GITHUB_STEP_SUMMARY
