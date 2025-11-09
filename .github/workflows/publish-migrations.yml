@@ -61,16 +61,16 @@ jobs:
 
           git diff --name-status ${{ env.COMPARE_BASE }} ${{ env.COMPARE_HEAD }} \
             | awk '$1=="A" || $1=="M"{print $2}' \
-            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true >> changed_files.txt
+            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true >> $RUNNER_TEMP/changed_files.txt
 
-          ls -la changed_files.txt
+          ls -la $RUNNER_TEMP/changed_files.txt
 
           echo "Changed files:"
-          cat changed_files.txt
+          cat $RUNNER_TEMP/changed_files.txt
 
           # Find count of changed files to decide whether to proceed
 
-          count=$(wc -l < changed_files.txt | xargs)
+          count=$(wc -l < $RUNNER_TEMP/changed_files.txt | xargs)
           echo "count=$count" >> $GITHUB_OUTPUT
 
       - name: Clone deployment repo
@@ -98,7 +98,7 @@ jobs:
           while IFS= read -r f; do
             cp "${GITHUB_WORKSPACE}/service/$f" "$GITHUB_WORKSPACE/deployment/${TARGET_DIR}/$(basename "$f")"
             echo "Copied $f to ${TARGET_DIR}/$(basename "$f")"
-          done < ${GITHUB_WORKSPACE}/service/changed_files.txt
+          done < ${RUNNER_TEMP}/changed_files.txt
 
           echo "Files now at ${TARGET_DIR}:"
           ls -la "${TARGET_DIR}"
