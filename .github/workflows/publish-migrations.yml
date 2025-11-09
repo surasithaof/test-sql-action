@@ -61,14 +61,14 @@ jobs:
 
           git diff --name-status ${{ env.COMPARE_BASE }} ${{ env.COMPARE_HEAD }} \
             | awk '$1=="A" || $1=="M"{print $2}' \
-            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true > changed_files.txt
+            | grep -E '^'"${SERVICE_MIGRATIONS_DIR}"'/.*\.up.sql$' || true > ${GITHUB_WORKSPACE}/service/changed_files.txt
 
           echo "Changed files:"
-          cat changed_files.txt
+          cat ${GITHUB_WORKSPACE}/service/changed_files.txt
 
           # Find count of changed files to decide whether to proceed
 
-          count=$(wc -l < changed_files.txt | xargs)
+          count=$(wc -l < ${GITHUB_WORKSPACE}/service/changed_files.txt | xargs)
           echo "count=$count" >> $GITHUB_OUTPUT
 
       - name: Clone deployment repo
@@ -117,7 +117,7 @@ jobs:
           branch: migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}
           title: "chore(db): publish migrations"
           body: |
-            This PR publishes new DB migrations 
+            This PR publishes new DB migrations
 
             - **Service**: [${{ github.repository }}](https://github.com/${{ github.repository }}).
             - **Commit**: [${{ github.sha }}](https://github.com/${{ github.repository }}/commit/${{ github.sha }}).
