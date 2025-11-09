@@ -114,6 +114,7 @@ jobs:
 
           BRANCH="migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}"
           git checkout -b "$BRANCH"
+          git push --set-upstream origin "$BRANCH"
 
           # Copy changed files
 
@@ -144,7 +145,7 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.DEPLOYMENT_REPO_TOKEN }}
-          path: ${GITHUB_WORKSPACE}/deployment
+          path: deployment
           branch: migrations/${{ github.repository_owner }}-${{ github.event.repository.name }}-${{ github.run_id }}
           title: "chore(db): publish migrations"
           body: |
